@@ -2,7 +2,7 @@
  * Date manipulation and formatting utilities
  */
 
-import { format, formatDistanceToNow, parseISO } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 
 export const formatDate = (date: Date | number, formatStr: string = 'PPP'): string => {
   return format(new Date(date), formatStr);

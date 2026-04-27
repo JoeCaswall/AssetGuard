@@ -4,10 +4,15 @@
  */
 
 import React from 'react';
+import { View, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationParams } from '../types';
+import {
+  JobsStackParamList,
+  SettingsStackParamList,
+  BottomTabParamList,
+} from '../types';
 
 // Placeholder imports - will be replaced with actual screens
 // import JobsScreen from '../screens/Jobs';
@@ -15,8 +20,22 @@ import { NavigationParams } from '../types';
 // import CreateJobScreen from '../screens/CreateJob';
 // import SettingsScreen from '../screens/Settings';
 
-const Stack = createNativeStackNavigator<NavigationParams>();
-const Tab = createBottomTabNavigator<NavigationParams>();
+const JobsStack = createNativeStackNavigator<JobsStackParamList>();
+const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
+const BottomTab = createBottomTabNavigator<BottomTabParamList>();
+
+// Placeholder components - will be replaced with actual screens
+const placeholderStyle = {
+  flex: 1 as const,
+  justifyContent: 'center' as const,
+  alignItems: 'center' as const,
+};
+
+const PlaceholderScreen = ({ name }: { name: string }) => (
+  <View style={placeholderStyle}>
+    <Text>{name} Screen - To be implemented</Text>
+  </View>
+);
 
 /**
  * Jobs stack navigator
@@ -24,27 +43,27 @@ const Tab = createBottomTabNavigator<NavigationParams>();
  */
 const JobsStackNavigator = () => {
   return (
-    <Stack.Navigator
+    <JobsStack.Navigator
       screenOptions={{
         headerShown: true,
-      }}
-    >
-      {/* <Stack.Screen 
-        name="Jobs" 
-        component={JobsScreen}
+      }}>
+      <JobsStack.Screen
+        name="JobsList"
+        component={() => <PlaceholderScreen name="Jobs List" />}
         options={{ title: 'My Jobs' }}
       />
-      <Stack.Screen
+      {/* Additional screens to be uncommented when implemented:
+      <JobsStack.Screen
         name="JobDetail"
         component={JobDetailScreen}
         options={{ title: 'Job Details' }}
       />
-      <Stack.Screen
+      <JobsStack.Screen
         name="CreateJob"
         component={CreateJobScreen}
         options={{ title: 'New Job' }}
       /> */}
-    </Stack.Navigator>
+    </JobsStack.Navigator>
   );
 };
 
@@ -53,13 +72,13 @@ const JobsStackNavigator = () => {
  */
 const SettingsStackNavigator = () => {
   return (
-    <Stack.Navigator>
-      {/* <Stack.Screen
-        name="Settings"
-        component={SettingsScreen}
+    <SettingsStack.Navigator>
+      <SettingsStack.Screen
+        name="SettingsScreen"
+        component={() => <PlaceholderScreen name="Settings" />}
         options={{ title: 'Settings' }}
-      /> */}
-    </Stack.Navigator>
+      />
+    </SettingsStack.Navigator>
   );
 };
 
@@ -69,30 +88,29 @@ const SettingsStackNavigator = () => {
 export const RootNavigator = () => {
   return (
     <NavigationContainer>
-      <Tab.Navigator
+      <BottomTab.Navigator
         screenOptions={{
           headerShown: false,
           tabBarActiveTintColor: '#007AFF',
           tabBarInactiveTintColor: '#999999',
-        }}
-      >
-        <Tab.Screen
-          name="Jobs"
+        }}>
+        <BottomTab.Screen
+          name="JobsStack"
           component={JobsStackNavigator}
           options={{
             title: 'Jobs',
             tabBarLabel: 'Jobs',
           }}
         />
-        <Tab.Screen
-          name="Settings"
+        <BottomTab.Screen
+          name="SettingsStack"
           component={SettingsStackNavigator}
           options={{
             title: 'Settings',
             tabBarLabel: 'Settings',
           }}
         />
-      </Tab.Navigator>
+      </BottomTab.Navigator>
     </NavigationContainer>
   );
 };

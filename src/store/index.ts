@@ -5,16 +5,15 @@
 
 import { createStore, applyMiddleware, combineReducers } from 'redux';
 import thunk from 'redux-thunk';
-import { AppState } from '../types';
 
 // Placeholder reducers
-const jobsReducer = (state = [], action: any) => state;
-const engineerReducer = (state = undefined, action: any) => state;
+const jobsReducer = (state = [], _action: Record<string, unknown>) => state;
+const engineerReducer = (state = undefined, _action: Record<string, unknown>) => state;
 const syncStatusReducer = (
   state = { isSyncing: false, hasUnsyncedData: false, syncErrors: [] },
-  action: any
+  _action: Record<string, unknown>
 ) => state;
-const uiReducer = (state = { loading: false }, action: any) => state;
+const uiReducer = (state = { loading: false }, _action: Record<string, unknown>) => state;
 
 const rootReducer = combineReducers({
   jobs: jobsReducer,

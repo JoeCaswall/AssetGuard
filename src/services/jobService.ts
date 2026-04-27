@@ -3,7 +3,7 @@
  * Handles CRUD operations for jobs with offline-first support
  */
 
-import { Job, JobStatus, Priority } from '../types';
+import { Job, JobStatus } from '../types';
 
 export interface IJobService {
   getAllJobs(): Promise<Job[]>;
@@ -25,31 +25,31 @@ class JobService implements IJobService {
     throw new Error('Not implemented');
   }
 
-  async getJobById(id: string): Promise<Job | null> {
+  async getJobById(_id: string): Promise<Job | null> {
     throw new Error('Not implemented');
   }
 
-  async createJob(job: Omit<Job, 'id' | 'createdAt' | 'updatedAt'>): Promise<Job> {
+  async createJob(_job: Omit<Job, 'id' | 'createdAt' | 'updatedAt'>): Promise<Job> {
     throw new Error('Not implemented');
   }
 
-  async updateJob(id: string, updates: Partial<Job>): Promise<Job> {
+  async updateJob(_id: string, _updates: Partial<Job>): Promise<Job> {
     throw new Error('Not implemented');
   }
 
-  async deleteJob(id: string): Promise<void> {
+  async deleteJob(_id: string): Promise<void> {
     throw new Error('Not implemented');
   }
 
-  async completeJob(id: string): Promise<Job> {
+  async completeJob(_id: string): Promise<Job> {
     throw new Error('Not implemented');
   }
 
-  async getJobsByStatus(status: JobStatus): Promise<Job[]> {
+  async getJobsByStatus(_status: JobStatus): Promise<Job[]> {
     throw new Error('Not implemented');
   }
 
-  async getJobsByEngineer(engineerId: string): Promise<Job[]> {
+  async getJobsByEngineer(_engineerId: string): Promise<Job[]> {
     throw new Error('Not implemented');
   }
 }

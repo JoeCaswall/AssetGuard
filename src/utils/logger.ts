@@ -7,7 +7,7 @@ type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 class Logger {
   private isDevelopment = __DEV__;
 
-  private log(level: LogLevel, message: string, data?: any): void {
+  private log(level: LogLevel, message: string, data?: Record<string, unknown>): void {
     const timestamp = new Date().toISOString();
     const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
 
@@ -18,19 +18,19 @@ class Logger {
     // TODO: Send logs to remote service in production
   }
 
-  debug(message: string, data?: any): void {
+  debug(message: string, data?: Record<string, unknown>): void {
     this.log('debug', message, data);
   }
 
-  info(message: string, data?: any): void {
+  info(message: string, data?: Record<string, unknown>): void {
     this.log('info', message, data);
   }
 
-  warn(message: string, data?: any): void {
+  warn(message: string, data?: Record<string, unknown>): void {
     this.log('warn', message, data);
   }
 
-  error(message: string, error?: any): void {
+  error(message: string, error?: Record<string, unknown>): void {
     this.log('error', message, error);
   }
 }

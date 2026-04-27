@@ -52,13 +52,13 @@ export const schema = {
       createdAt INTEGER NOT NULL,
       retryCount INTEGER DEFAULT 0
     )
-  `;
-
-  export const createIndexes = `
-    CREATE INDEX IF NOT EXISTS idx_jobs_engineerId ON jobs(engineerId);
-    CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
-    CREATE INDEX IF NOT EXISTS idx_jobs_synced ON jobs(synced);
-    CREATE INDEX IF NOT EXISTS idx_photos_jobId ON photos(jobId);
-    CREATE INDEX IF NOT EXISTS idx_syncQueue_entityType ON syncQueue(entityType);
-  `;
+  `,
 };
+
+export const createIndexes = `
+  CREATE INDEX IF NOT EXISTS idx_jobs_engineerId ON jobs(engineerId);
+  CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
+  CREATE INDEX IF NOT EXISTS idx_jobs_synced ON jobs(synced);
+  CREATE INDEX IF NOT EXISTS idx_photos_jobId ON photos(jobId);
+  CREATE INDEX IF NOT EXISTS idx_syncQueue_entityType ON syncQueue(entityType);
+`;

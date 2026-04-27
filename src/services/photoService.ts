@@ -17,19 +17,19 @@ export interface IPhotoService {
  * TODO: Implement photo storage and upload logic
  */
 class PhotoService implements IPhotoService {
-  async savePhoto(jobId: string, uri: string, caption?: string): Promise<Photo> {
+  async savePhoto(_jobId: string, _uri: string, _caption?: string): Promise<Photo> {
     throw new Error('Not implemented');
   }
 
-  async getPhotosByJob(jobId: string): Promise<Photo[]> {
+  async getPhotosByJob(_jobId: string): Promise<Photo[]> {
     throw new Error('Not implemented');
   }
 
-  async deletePhoto(photoId: string): Promise<void> {
+  async deletePhoto(_photoId: string): Promise<void> {
     throw new Error('Not implemented');
   }
 
-  async uploadPhotos(jobId: string): Promise<void> {
+  async uploadPhotos(_jobId: string): Promise<void> {
     throw new Error('Not implemented');
   }
 }

@@ -8,7 +8,7 @@ export interface SyncQueue {
   entityType: string;
   entityId: string;
   operation: 'create' | 'update' | 'delete';
-  payload: any;
+  payload: Record<string, unknown>;
   createdAt: Date;
   retryCount: number;
 }
@@ -22,10 +22,10 @@ class SyncService {
    * Queue a change for sync when connection is available
    */
   async queueChange(
-    entityType: string,
-    entityId: string,
-    operation: 'create' | 'update' | 'delete',
-    payload: any
+    _entityType: string,
+    _entityId: string,
+    _operation: 'create' | 'update' | 'delete',
+    _payload: Record<string, unknown>
   ): Promise<void> {
     throw new Error('Not implemented');
   }

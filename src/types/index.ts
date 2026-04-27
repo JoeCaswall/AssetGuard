@@ -53,9 +53,25 @@ export interface AppState {
   error?: string;
 }
 
-export interface NavigationParams {
+// Navigation parameter types
+export type RootStackParamList = {
   Jobs: undefined;
   JobDetail: { jobId: string };
   CreateJob: undefined;
   Settings: undefined;
-}
+};
+
+export type JobsStackParamList = {
+  JobsList: undefined;
+  JobDetail: { jobId: string };
+  CreateJob: undefined;
+};
+
+export type SettingsStackParamList = {
+  SettingsScreen: undefined;
+};
+
+export type BottomTabParamList = {
+  JobsStack: undefined;
+  SettingsStack: undefined;
+};
