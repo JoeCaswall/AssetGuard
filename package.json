@@ -11,7 +11,6 @@
     "windows": "react-native run-windows",
     "windows:dev": "react-native run-windows --dev",
     "windows:release": "react-native run-windows --release",
-    "ios": "react-native run-ios",
     "start": "react-native start",
     "test": "jest",
     "test:watch": "jest --watch",
