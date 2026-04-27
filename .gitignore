@@ -144,4 +144,4 @@ vite.config.ts.timestamp-*
 
 SETUP_GUIDE.md
 .vs
-.vscode
+/.vscode
