@@ -1,0 +1,37 @@
+{
+  "name": "assetguard",
+  "version": "1.0.0",
+  "private": true,
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "SDKROOT=$(xcrun --show-sdk-path) expo run:android",
+    "ios": "expo run:ios",
+    "typecheck": "tsc --noEmit",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-navigation/bottom-tabs": "^7.2.0",
+    "@react-navigation/native": "^7.0.14",
+    "@react-navigation/native-stack": "^7.2.0",
+    "babel-preset-expo": "~55.0.8",
+    "expo": "~55.0.0",
+    "expo-crypto": "~55.0.14",
+    "expo-image-picker": "~55.0.19",
+    "expo-network": "~55.0.13",
+    "expo-status-bar": "~55.0.5",
+    "react": "19.2.0",
+    "react-native": "0.83.6",
+    "react-native-gesture-handler": "~2.30.0",
+    "react-native-safe-area-context": "~5.6.2",
+    "react-native-screens": "~4.23.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/react": "~19.2.10",
+    "jest": "^29.7.0",
+    "jest-expo": "~55.0.16",
+    "typescript": "~5.9.2"
+  }
+}
