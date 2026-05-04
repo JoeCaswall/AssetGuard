@@ -17,7 +17,8 @@
       "package": "com.meridian.assetguard"
     },
     "plugins": [
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-secure-store"
     ]
   }
 }

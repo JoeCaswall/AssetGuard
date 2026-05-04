@@ -1,9 +1,10 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Screen } from '../components/Screen';
 import { StatusBadge } from '../components/StatusBadge';
 import { useAssetGuard, useSnapshotData } from '../context/AssetGuardProvider';
+import { loadDatabaseDebugView } from '../storage/sqliteStorage';
 
 import { formatShortDate } from '../utils/date';
 
@@ -14,8 +15,31 @@ interface HomeScreenProps {
 export function HomeScreen({ onSelectTask }: HomeScreenProps) {
   const { theme } = useAssetGuard();
   const { tasks } = useSnapshotData();
+  const [databasePreview, setDatabasePreview] = useState<string | null>(null);
+  const [debugError, setDebugError] = useState<string | null>(null);
+  const [isLoadingDatabasePreview, setIsLoadingDatabasePreview] = useState(false);
   const highPriorityCount = tasks.filter((task) => task.priority === 'high').length;
   const uniqueSiteCount = new Set(tasks.map((task) => task.siteName)).size;
+
+  async function handleViewLocalDatabase() {
+    try {
+      setIsLoadingDatabasePreview(true);
+      setDebugError(null);
+
+      const debugView = await loadDatabaseDebugView();
+      const preview = JSON.stringify(debugView, null, 2);
+
+      console.log('AssetGuard SQLite contents', debugView);
+      setDatabasePreview(preview);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to load SQLite database contents.';
+
+      setDebugError(message);
+      setDatabasePreview(null);
+    } finally {
+      setIsLoadingDatabasePreview(false);
+    }
+  }
 
   return (
     <Screen>
@@ -37,6 +61,29 @@ export function HomeScreen({ onSelectTask }: HomeScreenProps) {
           </View>
         </View>
         <Text style={[styles.helper, { color: theme.textMuted }]}>Inspection capture is now local-only. Sync and persistence will follow in later iterations.</Text>
+        {__DEV__ ? (
+          <View style={styles.debugSection}>
+            <Pressable
+              onPress={() => { void handleViewLocalDatabase(); }}
+              style={[styles.debugButton, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]}
+            >
+              <Text style={[styles.debugButtonLabel, { color: theme.text }]}>
+                {isLoadingDatabasePreview ? 'Loading local DB...' : 'View local DB'}
+              </Text>
+            </Pressable>
+            <Text style={[styles.helper, { color: theme.textMuted }]}>Prints current SQLite rows to the console and previews them below.</Text>
+            {debugError ? (
+              <Text style={[styles.debugError, { color: theme.danger }]}>DB inspector error: {debugError}</Text>
+            ) : null}
+            {databasePreview ? (
+              <View style={[styles.debugPreview, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]}>
+                <ScrollView nestedScrollEnabled style={styles.debugPreviewScroll}>
+                  <Text style={[styles.debugPreviewText, { color: theme.text }]}>{databasePreview}</Text>
+                </ScrollView>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
       </View>
 
       <Text style={[styles.sectionTitle, { color: theme.text }]}>Scheduled tasks</Text>
@@ -99,6 +146,38 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     textTransform: 'uppercase',
+  },
+  debugButton: {
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  debugButtonLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  debugError: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  debugPreview: {
+    borderRadius: 16,
+    borderWidth: 1,
+    maxHeight: 260,
+    padding: 12,
+  },
+  debugPreviewScroll: {
+    flexGrow: 0,
+  },
+  debugPreviewText: {
+    fontFamily: 'Courier',
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  debugSection: {
+    gap: 10,
+    marginTop: 4,
   },
   sectionTitle: {
     fontSize: 20,
