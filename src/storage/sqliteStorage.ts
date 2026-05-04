@@ -8,7 +8,6 @@ import { DraftRow, TaskRow, draftToSqliteParams, rowToInspectionDraft, rowToTask
 SQLite storage implementation and schema
 This module manages the SQLite database connection, schema initialization, and provides functions to load and save data.
 It seeds data from src/data/seed.ts for PoC purposes
-
 */
 
 const DATABASE_NAME = 'assetguard.db';
@@ -144,4 +143,24 @@ export async function updateTaskStatusInDatabase(taskId: string, status: TaskSta
     $status: status,
     $taskId: taskId,
   });
+}
+
+export async function loadDatabaseDebugView() {
+  const db = await ensureDatabaseReady();
+  const tasks = await db.getAllAsync<TaskRow>(
+    `SELECT id, asset_id, asset_name, site_name, due_date, priority, status, summary
+     FROM tasks
+     ORDER BY due_date ASC`,
+  );
+  const inspectionDrafts = await db.getAllAsync<DraftRow>(
+    `SELECT task_id, employee_number, condition, notes, safe_isolation, structural_integrity, leak_check
+     FROM inspection_drafts
+     ORDER BY task_id ASC`,
+  );
+
+  return {
+    databaseName: DATABASE_NAME,
+    tasks,
+    inspectionDrafts,
+  };
 }
