@@ -10,9 +10,10 @@ import { formatShortDate } from '../utils/date';
 interface TaskDetailScreenProps {
   task: AssetTask;
   onBack: () => void;
+  onStartInspection: () => void;
 }
 
-export function TaskDetailScreen({ task, onBack }: TaskDetailScreenProps) {
+export function TaskDetailScreen({ task, onBack, onStartInspection }: TaskDetailScreenProps) {
   const { theme } = useAssetGuard();
 
   return (
@@ -45,8 +46,11 @@ export function TaskDetailScreen({ task, onBack }: TaskDetailScreenProps) {
       </View>
 
       <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>TODO: Inspection action</Text>
-        <Text style={[styles.body, { color: theme.textMuted }]}>This screen establishes task-level context. Next step is to implement inspection actions here</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Inspection workflow</Text>
+        <Text style={[styles.body, { color: theme.textMuted }]}>Capture engineer details and inspection outcomes for this task in the next screen.</Text>
+        <Pressable onPress={onStartInspection} style={[styles.primaryButton, { backgroundColor: theme.primary }]}> 
+          <Text style={styles.primaryButtonText}>Start inspection</Text>
+        </Pressable>
       </View>
     </Screen>
   );
@@ -129,5 +133,17 @@ const styles = StyleSheet.create({
   body: {
     fontSize: 15,
     lineHeight: 22,
+  },
+  primaryButton: {
+    alignItems: 'center',
+    borderRadius: 16,
+    justifyContent: 'center',
+    minHeight: 52,
+    paddingHorizontal: 16,
+  },
+  primaryButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
