@@ -7,6 +7,8 @@ import { AssetGuardProvider, useAssetGuard } from '../src/context/AssetGuardProv
 import type { SyncInspectionEntry } from '../src/storage/sqliteStorage';
 
 const mockLoadSnapshotFromDatabase = jest.fn();
+const mockLoadLastSyncedAtFromDatabase = jest.fn();
+const mockLoadUnsyncedInspectionCountFromDatabase = jest.fn();
 const mockLoadUnsyncedInspectionEntriesFromDatabase = jest.fn();
 const mockMarkInspectionEntriesAsSynced = jest.fn();
 const mockSaveInspectionDraftToDatabase = jest.fn();
@@ -15,6 +17,8 @@ const mockSyncInspectionEntriesToApi = jest.fn();
 
 jest.mock('../src/storage/sqliteStorage', () => ({
   loadSnapshotFromDatabase: (...args: unknown[]) => mockLoadSnapshotFromDatabase(...args),
+  loadLastSyncedAtFromDatabase: (...args: unknown[]) => mockLoadLastSyncedAtFromDatabase(...args),
+  loadUnsyncedInspectionCountFromDatabase: (...args: unknown[]) => mockLoadUnsyncedInspectionCountFromDatabase(...args),
   loadUnsyncedInspectionEntriesFromDatabase: (...args: unknown[]) => mockLoadUnsyncedInspectionEntriesFromDatabase(...args),
   markInspectionEntriesAsSynced: (...args: unknown[]) => mockMarkInspectionEntriesAsSynced(...args),
   saveInspectionDraftToDatabase: (...args: unknown[]) => mockSaveInspectionDraftToDatabase(...args),
@@ -74,6 +78,8 @@ describe('AssetGuardProvider sync flow', () => {
   beforeEach(() => {
     capturedContext = undefined;
     mockLoadSnapshotFromDatabase.mockReset();
+    mockLoadLastSyncedAtFromDatabase.mockReset();
+    mockLoadUnsyncedInspectionCountFromDatabase.mockReset();
     mockLoadUnsyncedInspectionEntriesFromDatabase.mockReset();
     mockMarkInspectionEntriesAsSynced.mockReset();
     mockSaveInspectionDraftToDatabase.mockReset();
@@ -84,12 +90,15 @@ describe('AssetGuardProvider sync flow', () => {
       tasks: [],
       inspectionDrafts: {},
     });
+    mockLoadLastSyncedAtFromDatabase.mockResolvedValue(null);
+    mockLoadUnsyncedInspectionCountFromDatabase.mockResolvedValue(0);
   });
 
   it('marks unsynced rows as synced only after a successful API sync', async () => {
     mockLoadUnsyncedInspectionEntriesFromDatabase.mockResolvedValue(entries);
     mockSyncInspectionEntriesToApi.mockResolvedValue(undefined);
     mockMarkInspectionEntriesAsSynced.mockResolvedValue(undefined);
+    mockLoadUnsyncedInspectionCountFromDatabase.mockResolvedValueOnce(0).mockResolvedValueOnce(0);
 
     await renderProvider();
 

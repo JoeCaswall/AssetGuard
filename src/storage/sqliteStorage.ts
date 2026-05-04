@@ -19,6 +19,7 @@ It seeds data from src/data/seed.ts for PoC purposes
 
 const DATABASE_NAME = 'assetguard.db';
 const LOCAL_DATA_LAST_UPDATED_KEY = 'local_data_last_updated_at';
+const LAST_SYNCED_AT_KEY = 'last_synced_at';
 
 type StoredValue = string | number;
 
@@ -78,6 +79,10 @@ interface DatabaseTransaction {
 
 interface MetadataRow {
   value: string;
+}
+
+interface CountRow {
+  count: number;
 }
 
 let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
@@ -161,6 +166,15 @@ async function getLocalDataLastUpdatedAt(db: SQLite.SQLiteDatabase) {
   return row?.value ?? null;
 }
 
+async function getMetadataValue(db: SQLite.SQLiteDatabase, key: string) {
+  const row = await db.getFirstAsync<MetadataRow>(
+    'SELECT value FROM app_metadata WHERE key = $key',
+    { $key: key },
+  );
+
+  return row?.value ?? null;
+}
+
 async function updateLocalDataRetentionMarker(target: DatabaseTransaction | SQLite.SQLiteDatabase, timestamp = new Date().toISOString()) {
   await target.runAsync(
     `INSERT INTO app_metadata (key, value)
@@ -168,6 +182,18 @@ async function updateLocalDataRetentionMarker(target: DatabaseTransaction | SQLi
      ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
     {
       $key: LOCAL_DATA_LAST_UPDATED_KEY,
+      $value: timestamp,
+    },
+  );
+}
+
+async function updateLastSyncedAt(target: DatabaseTransaction | SQLite.SQLiteDatabase, timestamp = new Date().toISOString()) {
+  await target.runAsync(
+    `INSERT INTO app_metadata (key, value)
+     VALUES ($key, $value)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    {
+      $key: LAST_SYNCED_AT_KEY,
       $value: timestamp,
     },
   );
@@ -541,6 +567,17 @@ export async function loadUnsyncedInspectionEntriesFromDatabase(): Promise<SyncI
   });
 }
 
+export async function loadUnsyncedInspectionCountFromDatabase(): Promise<number> {
+  const db = await ensureDatabaseReady();
+  const row = await db.getFirstAsync<CountRow>(
+    `SELECT COUNT(*) AS count
+     FROM inspection_drafts
+     WHERE is_synced = 0`,
+  );
+
+  return row?.count ?? 0;
+}
+
 export async function markInspectionEntriesAsSynced(taskIds: string[]): Promise<void> {
   if (taskIds.length === 0) {
     return;
@@ -556,5 +593,12 @@ export async function markInspectionEntriesAsSynced(taskIds: string[]): Promise<
     ...taskIds,
   );
 
+  await updateLastSyncedAt(db);
   await updateLocalDataRetentionMarker(db);
+}
+
+export async function loadLastSyncedAtFromDatabase(): Promise<string | null> {
+  const db = await ensureDatabaseReady();
+
+  return await getMetadataValue(db, LAST_SYNCED_AT_KEY);
 }

@@ -4,8 +4,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Screen } from '../components/Screen';
 import { StatusBadge } from '../components/StatusBadge';
 import { useAssetGuard, useSnapshotData } from '../context/AssetGuardProvider';
-import { MOCK_SYNC_API_URL } from '../services/sync/syncService';
 import { loadDatabaseDebugView } from '../storage/sqliteStorage';
+import { formatUnsyncedInspectionCount } from '../utils/syncStatus';
 
 import { formatShortDate } from '../utils/date';
 
@@ -14,7 +14,7 @@ interface HomeScreenProps {
 }
 
 export function HomeScreen({ onSelectTask }: HomeScreenProps) {
-  const { theme, syncPendingInspectionEntries } = useAssetGuard();
+  const { theme, syncPendingInspectionEntries, lastSyncedAt, unsyncedInspectionCount } = useAssetGuard();
   const { tasks } = useSnapshotData();
   const [databasePreview, setDatabasePreview] = useState<string | null>(null);
   const [debugError, setDebugError] = useState<string | null>(null);
@@ -24,6 +24,7 @@ export function HomeScreen({ onSelectTask }: HomeScreenProps) {
   const [isSyncing, setIsSyncing] = useState(false);
   const highPriorityCount = tasks.filter((task) => task.priority === 'high').length;
   const uniqueSiteCount = new Set(tasks.map((task) => task.siteName)).size;
+  const lastSyncedLabel = lastSyncedAt ? new Date(lastSyncedAt).toLocaleString() : 'Never';
 
   async function handleViewLocalDatabase() {
     try {
@@ -94,7 +95,8 @@ export function HomeScreen({ onSelectTask }: HomeScreenProps) {
           >
             <Text style={styles.syncButtonLabel}>{isSyncing ? 'Syncing...' : 'Sync to backend API'}</Text>
           </Pressable>
-          <Text style={[styles.helper, { color: theme.textMuted }]}>Placeholder endpoint: {MOCK_SYNC_API_URL}</Text>
+          <Text style={[styles.helper, { color: theme.textMuted }]}>{formatUnsyncedInspectionCount(unsyncedInspectionCount)}</Text>
+          <Text style={[styles.helper, { color: theme.textMuted }]}>Last synced data at: {lastSyncedLabel}</Text>
           {syncStatusMessage ? (
             <Text style={[styles.syncStatus, { color: theme.text }]}>{syncStatusMessage}</Text>
           ) : null}
