@@ -5,6 +5,7 @@ import { Screen } from '../components/Screen';
 import { StatusBadge } from '../components/StatusBadge';
 import { useAssetGuard, useSnapshotData } from '../context/AssetGuardProvider';
 import { loadDatabaseDebugView } from '../storage/sqliteStorage';
+import { formatUnsyncedInspectionCount } from '../utils/syncStatus';
 
 import { formatShortDate } from '../utils/date';
 
@@ -13,13 +14,17 @@ interface HomeScreenProps {
 }
 
 export function HomeScreen({ onSelectTask }: HomeScreenProps) {
-  const { theme } = useAssetGuard();
+  const { theme, syncPendingInspectionEntries, lastSyncedAt, unsyncedInspectionCount } = useAssetGuard();
   const { tasks } = useSnapshotData();
   const [databasePreview, setDatabasePreview] = useState<string | null>(null);
   const [debugError, setDebugError] = useState<string | null>(null);
   const [isLoadingDatabasePreview, setIsLoadingDatabasePreview] = useState(false);
+  const [syncStatusMessage, setSyncStatusMessage] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
   const highPriorityCount = tasks.filter((task) => task.priority === 'high').length;
   const uniqueSiteCount = new Set(tasks.map((task) => task.siteName)).size;
+  const lastSyncedLabel = lastSyncedAt ? new Date(lastSyncedAt).toLocaleString() : 'Never';
 
   async function handleViewLocalDatabase() {
     try {
@@ -38,6 +43,28 @@ export function HomeScreen({ onSelectTask }: HomeScreenProps) {
       setDatabasePreview(null);
     } finally {
       setIsLoadingDatabasePreview(false);
+    }
+  }
+
+  async function handleSyncToBackend() {
+    try {
+      setIsSyncing(true);
+      setSyncError(null);
+
+      const syncedEntryCount = await syncPendingInspectionEntries();
+
+      if (syncedEntryCount === 0) {
+        setSyncStatusMessage('No unsynced local inspection entries were found.');
+      } else {
+        setSyncStatusMessage(`Synced ${syncedEntryCount} entr${syncedEntryCount === 1 ? 'y' : 'ies'} to the placeholder backend.`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to sync local inspection data.';
+
+      setSyncError(message);
+      setSyncStatusMessage(null);
+    } finally {
+      setIsSyncing(false);
     }
   }
 
@@ -60,7 +87,23 @@ export function HomeScreen({ onSelectTask }: HomeScreenProps) {
             <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Sites</Text>
           </View>
         </View>
-        <Text style={[styles.helper, { color: theme.textMuted }]}>Inspection capture is now local-only. Sync and persistence will follow in later iterations.</Text>
+        <Text style={[styles.helper, { color: theme.textMuted }]}>Inspection capture is stored locally first, then posted to a placeholder backend when you trigger sync.</Text>
+        <View style={styles.syncSection}>
+          <Pressable
+            onPress={() => { void handleSyncToBackend(); }}
+            style={[styles.syncButton, { backgroundColor: theme.primary }]}
+          >
+            <Text style={styles.syncButtonLabel}>{isSyncing ? 'Syncing...' : 'Sync to backend API'}</Text>
+          </Pressable>
+          <Text style={[styles.helper, { color: theme.textMuted }]}>{formatUnsyncedInspectionCount(unsyncedInspectionCount)}</Text>
+          <Text style={[styles.helper, { color: theme.textMuted }]}>Last synced data at: {lastSyncedLabel}</Text>
+          {syncStatusMessage ? (
+            <Text style={[styles.syncStatus, { color: theme.text }]}>{syncStatusMessage}</Text>
+          ) : null}
+          {syncError ? (
+            <Text style={[styles.debugError, { color: theme.danger }]}>Sync error: {syncError}</Text>
+          ) : null}
+        </View>
         {__DEV__ ? (
           <View style={styles.debugSection}>
             <Pressable
@@ -178,6 +221,24 @@ const styles = StyleSheet.create({
   debugSection: {
     gap: 10,
     marginTop: 4,
+  },
+  syncButton: {
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  syncButtonLabel: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  syncSection: {
+    gap: 10,
+    marginTop: 4,
+  },
+  syncStatus: {
+    fontSize: 13,
+    lineHeight: 18,
   },
   sectionTitle: {
     fontSize: 20,

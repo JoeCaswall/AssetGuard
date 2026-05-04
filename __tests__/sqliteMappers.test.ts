@@ -35,6 +35,7 @@ describe('sqlite storage mappers', () => {
         safe_isolation: 1,
         structural_integrity: 0,
         leak_check: 1,
+        is_synced: 0,
       }),
     ).toEqual({
       employeeNumber: '1234',
@@ -68,6 +69,7 @@ describe('sqlite storage mappers', () => {
       $safeIsolation: 1,
       $structuralIntegrity: 1,
       $leakCheck: 0,
+      $isSynced: 0,
     });
   });
 });

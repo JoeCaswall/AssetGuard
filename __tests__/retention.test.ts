@@ -1,20 +1,20 @@
 import { LOCAL_DATA_RETENTION_DAYS, hasLocalDataExpired } from '../src/storage/retention';
 
 describe('local data retention', () => {
-  it('keeps local data when it is newer than the 90 day retention window', () => {
+  it('keeps local data when it is newer than the 30 day retention window', () => {
     expect(
       hasLocalDataExpired(
         '2026-02-05T00:00:00.000Z',
-        new Date('2026-05-04T00:00:00.000Z'),
+        new Date('2026-03-04T00:00:00.000Z'),
       ),
     ).toBe(false);
   });
 
-  it('expires local data once it reaches the 90 day retention window', () => {
+  it('expires local data once it reaches the 30 day retention window', () => {
     expect(
       hasLocalDataExpired(
         '2026-02-03T00:00:00.000Z',
-        new Date('2026-05-04T00:00:00.000Z'),
+        new Date('2026-03-05T00:00:00.000Z'),
       ),
     ).toBe(true);
   });
@@ -24,6 +24,6 @@ describe('local data retention', () => {
   });
 
   it('documents the expected retention policy length', () => {
-    expect(LOCAL_DATA_RETENTION_DAYS).toBe(90);
+    expect(LOCAL_DATA_RETENTION_DAYS).toBe(30);
   });
 });
