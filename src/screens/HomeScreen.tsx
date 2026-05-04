@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Screen } from '../components/Screen';
 import { StatusBadge } from '../components/StatusBadge';
@@ -77,7 +77,9 @@ export function HomeScreen({ onSelectTask }: HomeScreenProps) {
             ) : null}
             {databasePreview ? (
               <View style={[styles.debugPreview, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]}>
-                <Text style={[styles.debugPreviewText, { color: theme.text }]}>{databasePreview}</Text>
+                <ScrollView nestedScrollEnabled style={styles.debugPreviewScroll}>
+                  <Text style={[styles.debugPreviewText, { color: theme.text }]}>{databasePreview}</Text>
+                </ScrollView>
               </View>
             ) : null}
           </View>
@@ -164,6 +166,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     maxHeight: 260,
     padding: 12,
+  },
+  debugPreviewScroll: {
+    flexGrow: 0,
   },
   debugPreviewText: {
     fontFamily: 'Courier',
