@@ -19,12 +19,31 @@ interface InspectionFormScreenProps {
 }
 
 export function InspectionFormScreen({ task, onBack }: InspectionFormScreenProps) {
-  const { theme } = useAssetGuard();
-  const [engineerInitials, setEngineerInitials] = React.useState('');
-  const [condition, setCondition] = React.useState<InspectionCondition>('pass');
-  const [notes, setNotes] = React.useState('');
-  const [checklist, setChecklist] = React.useState<InspectionChecklist>(initialInspectionChecklist);
-  const draftSummary = buildInspectionDraftSummary({ engineerInitials, condition, notes, checklist });
+  const { theme, getInspectionDraft, saveInspectionDraft, submitInspectionDraft } = useAssetGuard();
+  const existingDraft = getInspectionDraft(task.id);
+  const [engineerInitials, setEngineerInitials] = React.useState(existingDraft.engineerInitials);
+  const [condition, setCondition] = React.useState<InspectionCondition>(existingDraft.condition);
+  const [notes, setNotes] = React.useState(existingDraft.notes);
+  const [checklist, setChecklist] = React.useState<InspectionChecklist>(existingDraft.checklist ?? initialInspectionChecklist);
+  const currentDraft = React.useMemo(
+    () => ({
+      engineerInitials,
+      condition,
+      notes,
+      checklist,
+    }),
+    [checklist, condition, engineerInitials, notes],
+  );
+  const draftSummary = buildInspectionDraftSummary(currentDraft);
+
+  React.useEffect(() => {
+    saveInspectionDraft(task.id, currentDraft);
+  }, [currentDraft, saveInspectionDraft, task.id]);
+
+  function handleSubmit(action: 'save-draft' | 'complete') {
+    submitInspectionDraft(task.id, action, currentDraft);
+    onBack();
+  }
 
   return (
     <Screen>
@@ -114,6 +133,18 @@ export function InspectionFormScreen({ task, onBack }: InspectionFormScreenProps
         <DetailRow label="Condition" value={draftSummary.condition} />
         <DetailRow label="Checklist complete" value={String(draftSummary.checklistComplete)} />
         <DetailRow label="Notes length" value={String(draftSummary.notesLength)} />
+      </View>
+
+      <View style={styles.actionRow}>
+        <Pressable
+          onPress={() => handleSubmit('save-draft')}
+          style={[styles.secondaryButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
+        >
+          <Text style={[styles.secondaryButtonText, { color: theme.text }]}>Save draft</Text>
+        </Pressable>
+        <Pressable onPress={() => handleSubmit('complete')} style={[styles.primaryButton, { backgroundColor: theme.primary }]}> 
+          <Text style={styles.primaryButtonText}>Complete inspection</Text>
+        </Pressable>
       </View>
     </Screen>
   );
@@ -235,5 +266,35 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     fontSize: 16,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  secondaryButton: {
+    alignItems: 'center',
+    borderRadius: 16,
+    borderWidth: 1,
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 52,
+    paddingHorizontal: 16,
+  },
+  secondaryButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  primaryButton: {
+    alignItems: 'center',
+    borderRadius: 16,
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 52,
+    paddingHorizontal: 16,
+  },
+  primaryButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

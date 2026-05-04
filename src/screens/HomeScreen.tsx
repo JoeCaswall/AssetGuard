@@ -36,7 +36,7 @@ export function HomeScreen({ onSelectTask }: HomeScreenProps) {
             <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Sites</Text>
           </View>
         </View>
-        <Text style={[styles.helper, { color: theme.textMuted }]}>Current scope: dashboard-only. Inspection capture, sync, and auditing are intentionally deferred.</Text>
+        <Text style={[styles.helper, { color: theme.textMuted }]}>Inspection capture is now local-only. Sync and persistence will follow in later iterations.</Text>
       </View>
 
       <Text style={[styles.sectionTitle, { color: theme.text }]}>Scheduled tasks</Text>
