@@ -12,9 +12,12 @@ import { getTheme, ThemeTokens } from '../theme/tokens';
 import { AppStateSnapshot, InspectionDraft } from '../types/domain';
 import {
   loadSnapshotFromDatabase,
+  loadUnsyncedInspectionEntriesFromDatabase,
+  markInspectionEntriesAsSynced,
   saveInspectionDraftToDatabase,
   updateTaskStatusInDatabase,
 } from '../storage/sqliteStorage';
+import { syncInspectionEntriesToApi } from '../services/sync/syncService';
 import {
   InspectionSubmitAction,
   emptyInspectionDraft,
@@ -30,6 +33,7 @@ interface AssetGuardContextValue {
   saveInspectionDraft: (taskId: string, draft: InspectionDraft) => Promise<void>;
   submitInspectionDraft: (taskId: string, action: InspectionSubmitAction, draft: InspectionDraft) => Promise<void>;
   getInspectionDraft: (taskId: string) => InspectionDraft;
+  syncPendingInspectionEntries: () => Promise<number>;
 }
 
 const AssetGuardContext = createContext<AssetGuardContextValue | undefined>(undefined);
@@ -94,6 +98,19 @@ export function AssetGuardProvider({ children }: PropsWithChildren) {
     return snapshot.inspectionDrafts[taskId] ?? emptyInspectionDraft;
   }, [snapshot.inspectionDrafts]);
 
+  const syncPendingInspectionEntries = useCallback(async () => {
+    const unsyncedEntries = await loadUnsyncedInspectionEntriesFromDatabase();
+
+    if (unsyncedEntries.length === 0) {
+      return 0;
+    }
+
+    await syncInspectionEntriesToApi(unsyncedEntries);
+    await markInspectionEntriesAsSynced(unsyncedEntries.map((entry) => entry.draft.task_id));
+
+    return unsyncedEntries.length;
+  }, []);
+
   const value = useMemo<AssetGuardContextValue>(() => {
     return {
       ready,
@@ -102,8 +119,9 @@ export function AssetGuardProvider({ children }: PropsWithChildren) {
       saveInspectionDraft,
       submitInspectionDraft,
       getInspectionDraft,
+      syncPendingInspectionEntries,
     };
-  }, [getInspectionDraft, ready, saveInspectionDraft, snapshot, submitInspectionDraft]);
+  }, [getInspectionDraft, ready, saveInspectionDraft, snapshot, submitInspectionDraft, syncPendingInspectionEntries]);
 
   return <AssetGuardContext.Provider value={value}>{children}</AssetGuardContext.Provider>;
 }

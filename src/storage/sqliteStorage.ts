@@ -22,6 +22,10 @@ const LOCAL_DATA_LAST_UPDATED_KEY = 'local_data_last_updated_at';
 
 type StoredValue = string | number;
 
+interface TableInfoRow {
+  name: string;
+}
+
 interface StoredTaskRow {
   id: string;
   asset_id: StoredValue;
@@ -41,6 +45,30 @@ interface StoredDraftRow {
   safe_isolation: StoredValue;
   structural_integrity: StoredValue;
   leak_check: StoredValue;
+  is_synced: number;
+}
+
+export interface SyncInspectionEntry {
+  task: {
+    id: string;
+    asset_id: string | number;
+    asset_name: string | number;
+    site_name: string | number;
+    due_date: string | number;
+    priority: string | number;
+    status: string | number;
+    summary: string | number;
+  };
+  draft: {
+    task_id: string;
+    employee_number: string | number;
+    condition: string | number;
+    notes: string | number;
+    safe_isolation: string | number;
+    structural_integrity: string | number;
+    leak_check: string | number;
+    is_synced: number;
+  };
 }
 
 interface DatabaseTransaction {
@@ -100,9 +128,12 @@ async function initialiseDatabase(db: SQLite.SQLiteDatabase) {
       safe_isolation INTEGER NOT NULL,
       structural_integrity INTEGER NOT NULL,
       leak_check INTEGER NOT NULL,
+      is_synced INTEGER NOT NULL DEFAULT 0,
       FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE
     );
   `);
+
+  await ensureDraftSyncColumn(db);
 
   await purgeExpiredLocalDataIfNeeded(db);
 
@@ -160,6 +191,16 @@ async function purgeExpiredLocalDataIfNeeded(db: SQLite.SQLiteDatabase) {
   }
 
   await resetDatabaseWithEncryptedSeedData(db);
+}
+
+async function ensureDraftSyncColumn(db: SQLite.SQLiteDatabase) {
+  const columns = await db.getAllAsync<TableInfoRow>('PRAGMA table_info(inspection_drafts)');
+
+  if (columns.some((column) => column.name === 'is_synced')) {
+    return;
+  }
+
+  await db.execAsync('ALTER TABLE inspection_drafts ADD COLUMN is_synced INTEGER NOT NULL DEFAULT 0;');
 }
 
 async function seedEncryptedTasks(txn: DatabaseTransaction) {
@@ -223,6 +264,7 @@ async function decryptDraftRow(row: StoredDraftRow): Promise<DraftRow> {
     safe_isolation: await decryptStorageNumber(row.safe_isolation),
     structural_integrity: await decryptStorageNumber(row.structural_integrity),
     leak_check: await decryptStorageNumber(row.leak_check),
+    is_synced: row.is_synced,
   };
 }
 
@@ -291,7 +333,7 @@ async function migratePlaintextRowsToEncrypted(db: SQLite.SQLiteDatabase) {
      FROM tasks`,
   );
   const draftRows = await db.getAllAsync<StoredDraftRow>(
-    `SELECT task_id, employee_number, condition, notes, safe_isolation, structural_integrity, leak_check
+    `SELECT task_id, employee_number, condition, notes, safe_isolation, structural_integrity, leak_check, is_synced
      FROM inspection_drafts`,
   );
 
@@ -335,7 +377,8 @@ async function migratePlaintextRowsToEncrypted(db: SQLite.SQLiteDatabase) {
              notes = $notes,
              safe_isolation = $safeIsolation,
              structural_integrity = $structuralIntegrity,
-             leak_check = $leakCheck
+             leak_check = $leakCheck,
+             is_synced = $isSynced
          WHERE task_id = $taskId`,
         {
           $taskId: row.task_id,
@@ -345,6 +388,7 @@ async function migratePlaintextRowsToEncrypted(db: SQLite.SQLiteDatabase) {
           $safeIsolation: await encryptValueIfNeeded(row.safe_isolation),
           $structuralIntegrity: await encryptValueIfNeeded(row.structural_integrity),
           $leakCheck: await encryptValueIfNeeded(row.leak_check),
+          $isSynced: row.is_synced,
         },
       );
     }
@@ -359,7 +403,7 @@ export async function loadSnapshotFromDatabase(): Promise<AppStateSnapshot> {
      ORDER BY id ASC`,
   );
   const draftRows = await db.getAllAsync<StoredDraftRow>(
-    `SELECT task_id, employee_number, condition, notes, safe_isolation, structural_integrity, leak_check
+    `SELECT task_id, employee_number, condition, notes, safe_isolation, structural_integrity, leak_check, is_synced
      FROM inspection_drafts`,
   );
 
@@ -401,7 +445,8 @@ export async function saveInspectionDraftToDatabase(taskId: string, draft: Inspe
        notes,
        safe_isolation,
        structural_integrity,
-       leak_check
+       leak_check,
+       is_synced
      ) VALUES (
        $taskId,
        $employeeNumber,
@@ -409,7 +454,8 @@ export async function saveInspectionDraftToDatabase(taskId: string, draft: Inspe
        $notes,
        $safeIsolation,
        $structuralIntegrity,
-       $leakCheck
+       $leakCheck,
+       $isSynced
      )
      ON CONFLICT(task_id) DO UPDATE SET
        employee_number = excluded.employee_number,
@@ -417,7 +463,8 @@ export async function saveInspectionDraftToDatabase(taskId: string, draft: Inspe
        notes = excluded.notes,
        safe_isolation = excluded.safe_isolation,
        structural_integrity = excluded.structural_integrity,
-       leak_check = excluded.leak_check`,
+       leak_check = excluded.leak_check,
+       is_synced = excluded.is_synced`,
     encryptedDraftParams,
   );
 
@@ -444,7 +491,7 @@ export async function loadDatabaseDebugView() {
      ORDER BY id ASC`,
   );
   const inspectionDrafts = await db.getAllAsync<StoredDraftRow>(
-    `SELECT task_id, employee_number, condition, notes, safe_isolation, structural_integrity, leak_check
+    `SELECT task_id, employee_number, condition, notes, safe_isolation, structural_integrity, leak_check, is_synced
      FROM inspection_drafts
      ORDER BY task_id ASC`,
   );
@@ -454,4 +501,59 @@ export async function loadDatabaseDebugView() {
     tasks,
     inspectionDrafts,
   };
+}
+
+export async function loadUnsyncedInspectionEntriesFromDatabase(): Promise<SyncInspectionEntry[]> {
+  const db = await ensureDatabaseReady();
+  const draftRows = await db.getAllAsync<StoredDraftRow>(
+    `SELECT task_id, employee_number, condition, notes, safe_isolation, structural_integrity, leak_check, is_synced
+     FROM inspection_drafts
+     WHERE is_synced = 0
+     ORDER BY task_id ASC`,
+  );
+
+  if (draftRows.length === 0) {
+    return [];
+  }
+
+  const taskIds = draftRows.map((row) => row.task_id);
+  const placeholders = taskIds.map(() => '?').join(', ');
+  const taskRows = await db.getAllAsync<StoredTaskRow>(
+    `SELECT id, asset_id, asset_name, site_name, due_date, priority, status, summary
+     FROM tasks
+     WHERE id IN (${placeholders})`,
+    ...taskIds,
+  );
+  const taskMap = new Map(taskRows.map((row) => [row.id, row]));
+
+  return draftRows.flatMap((draftRow) => {
+    const taskRow = taskMap.get(draftRow.task_id);
+
+    if (!taskRow) {
+      return [];
+    }
+
+    return [{
+      task: taskRow,
+      draft: draftRow,
+    }];
+  });
+}
+
+export async function markInspectionEntriesAsSynced(taskIds: string[]): Promise<void> {
+  if (taskIds.length === 0) {
+    return;
+  }
+
+  const db = await ensureDatabaseReady();
+  const placeholders = taskIds.map(() => '?').join(', ');
+
+  await db.runAsync(
+    `UPDATE inspection_drafts
+     SET is_synced = 1
+     WHERE task_id IN (${placeholders})`,
+    ...taskIds,
+  );
+
+  await updateLocalDataRetentionMarker(db);
 }

@@ -25,6 +25,7 @@ export interface DraftRow {
   safe_isolation: number;
   structural_integrity: number;
   leak_check: number;
+  is_synced: number;
 }
 
 export function rowToTask(row: TaskRow): AssetTask {
@@ -62,5 +63,6 @@ export function draftToSqliteParams(taskId: string, draft: InspectionDraft) {
     $safeIsolation: draft.checklist.safeIsolation ? 1 : 0,
     $structuralIntegrity: draft.checklist.structuralIntegrity ? 1 : 0,
     $leakCheck: draft.checklist.leakCheck ? 1 : 0,
+    $isSynced: 0,
   };
 }
