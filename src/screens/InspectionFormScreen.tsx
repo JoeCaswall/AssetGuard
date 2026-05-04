@@ -21,18 +21,18 @@ interface InspectionFormScreenProps {
 export function InspectionFormScreen({ task, onBack }: InspectionFormScreenProps) {
   const { theme, getInspectionDraft, saveInspectionDraft, submitInspectionDraft } = useAssetGuard();
   const existingDraft = getInspectionDraft(task.id);
-  const [engineerInitials, setEngineerInitials] = React.useState(existingDraft.engineerInitials);
+  const [employeeNumber, setEmployeeNumber] = React.useState(existingDraft.employeeNumber);
   const [condition, setCondition] = React.useState<InspectionCondition>(existingDraft.condition);
   const [notes, setNotes] = React.useState(existingDraft.notes);
   const [checklist, setChecklist] = React.useState<InspectionChecklist>(existingDraft.checklist ?? initialInspectionChecklist);
   const currentDraft = React.useMemo(
     () => ({
-      engineerInitials,
+      employeeNumber,
       condition,
       notes,
       checklist,
     }),
-    [checklist, condition, engineerInitials, notes],
+    [checklist, condition, employeeNumber, notes],
   );
   const draftSummary = buildInspectionDraftSummary(currentDraft);
 
@@ -66,15 +66,15 @@ export function InspectionFormScreen({ task, onBack }: InspectionFormScreenProps
       </View>
 
       <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Engineer details</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Employee details</Text>
         <TextInput
-          autoCapitalize="characters"
-          maxLength={6}
-          onChangeText={setEngineerInitials}
-          placeholder="Engineer initials"
+          keyboardType="number-pad"
+          maxLength={4}
+          onChangeText={(value) => setEmployeeNumber(value.replace(/\D/g, '').slice(0, 4))}
+          placeholder="4-digit employee number"
           placeholderTextColor={theme.textMuted}
           style={[styles.input, { backgroundColor: theme.surfaceMuted, borderColor: theme.border, color: theme.text }]}
-          value={engineerInitials}
+          value={employeeNumber}
         />
       </View>
 
@@ -129,7 +129,8 @@ export function InspectionFormScreen({ task, onBack }: InspectionFormScreenProps
 
       <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Current draft</Text>
-        <DetailRow label="Initials" value={draftSummary.engineerInitials} />
+        <DetailRow label="Employee number" value={draftSummary.employeeNumber || 'Not set'} />
+        <DetailRow label="Employee number valid" value={String(draftSummary.employeeNumberValid)} />
         <DetailRow label="Condition" value={draftSummary.condition} />
         <DetailRow label="Checklist complete" value={String(draftSummary.checklistComplete)} />
         <DetailRow label="Notes length" value={String(draftSummary.notesLength)} />

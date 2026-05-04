@@ -9,14 +9,15 @@ export interface InspectionChecklist {
 }
 
 export interface InspectionDraftInput {
-  engineerInitials: string;
+  employeeNumber: string;
   condition: InspectionCondition;
   notes: string;
   checklist: InspectionChecklist;
 }
 
 export interface InspectionDraftSummary {
-  engineerInitials: string;
+  employeeNumber: string;
+  employeeNumberValid: boolean;
   condition: InspectionCondition;
   notesLength: number;
   checklistComplete: boolean;
@@ -31,16 +32,18 @@ export const initialInspectionChecklist: InspectionChecklist = {
 };
 
 export const emptyInspectionDraft: InspectionDraft = {
-  engineerInitials: '',
+  employeeNumber: '',
   condition: 'pass',
   notes: '',
   checklist: initialInspectionChecklist,
 };
 
-export function normaliseEngineerInitials(value: string): string {
-  const trimmed = value.trim().toUpperCase();
+export function normaliseEmployeeNumber(value: string): string {
+  return value.replace(/\D/g, '').slice(0, 4);
+}
 
-  return trimmed || 'Not set';
+export function isValidEmployeeNumber(value: string): boolean {
+  return /^\d{4}$/.test(normaliseEmployeeNumber(value));
 }
 
 export function isInspectionChecklistComplete(checklist: InspectionChecklist): boolean {
@@ -48,8 +51,11 @@ export function isInspectionChecklistComplete(checklist: InspectionChecklist): b
 }
 
 export function buildInspectionDraftSummary(input: InspectionDraftInput): InspectionDraftSummary {
+  const employeeNumber = normaliseEmployeeNumber(input.employeeNumber);
+
   return {
-    engineerInitials: normaliseEngineerInitials(input.engineerInitials),
+    employeeNumber,
+    employeeNumberValid: isValidEmployeeNumber(employeeNumber),
     condition: input.condition,
     notesLength: input.notes.trim().length,
     checklistComplete: isInspectionChecklistComplete(input.checklist),
@@ -64,7 +70,7 @@ export function upsertInspectionDraft(
   return {
     ...drafts,
     [taskId]: {
-      engineerInitials: draft.engineerInitials,
+      employeeNumber: normaliseEmployeeNumber(draft.employeeNumber),
       condition: draft.condition,
       notes: draft.notes,
       checklist: {

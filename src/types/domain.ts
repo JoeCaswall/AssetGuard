@@ -13,7 +13,7 @@ export interface AssetTask {
 }
 
 export interface InspectionDraft {
-  engineerInitials: string;
+  employeeNumber: string;
   condition: "pass" | "monitor" | "fail";
   notes: string;
   checklist: {

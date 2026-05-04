@@ -4,18 +4,21 @@ import {
   getTaskStatusForInspectionAction,
   initialInspectionChecklist,
   isInspectionChecklistComplete,
-  normaliseEngineerInitials,
+  isValidEmployeeNumber,
+  normaliseEmployeeNumber,
   updateTaskStatusForInspectionAction,
   upsertInspectionDraft,
 } from '../src/utils/inspectionForm';
 
 describe('inspection form helpers', () => {
-  it('normalises engineer initials to trimmed uppercase text', () => {
-    expect(normaliseEngineerInitials(' jc ')).toBe('JC');
+  it('normalises employee numbers to digits only with a four-digit maximum', () => {
+    expect(normaliseEmployeeNumber(' 12a34 56 ')).toBe('1234');
   });
 
-  it('returns a placeholder when initials are empty', () => {
-    expect(normaliseEngineerInitials('   ')).toBe('Not set');
+  it('accepts only valid four-digit employee numbers', () => {
+    expect(isValidEmployeeNumber('1234')).toBe(true);
+    expect(isValidEmployeeNumber('123')).toBe(false);
+    expect(isValidEmployeeNumber('12a4')).toBe(false);
   });
 
   it('treats the checklist as incomplete until every item is true', () => {
@@ -32,7 +35,7 @@ describe('inspection form helpers', () => {
   it('builds a draft summary with trimmed notes length and checklist state', () => {
     expect(
       buildInspectionDraftSummary({
-        engineerInitials: 'ab',
+        employeeNumber: '12a45',
         condition: 'monitor',
         notes: '  follow up required  ',
         checklist: {
@@ -42,7 +45,8 @@ describe('inspection form helpers', () => {
         },
       }),
     ).toEqual({
-      engineerInitials: 'AB',
+      employeeNumber: '1245',
+      employeeNumberValid: true,
       condition: 'monitor',
       notesLength: 18,
       checklistComplete: false,
@@ -60,7 +64,7 @@ describe('inspection form helpers', () => {
         },
         'task-2',
         {
-          engineerInitials: 'jc',
+          employeeNumber: '12a4',
           condition: 'pass',
           notes: 'new draft',
           checklist: {
@@ -76,7 +80,7 @@ describe('inspection form helpers', () => {
         notes: 'existing',
       },
       'task-2': {
-        engineerInitials: 'jc',
+        employeeNumber: '124',
         condition: 'pass',
         notes: 'new draft',
         checklist: {
