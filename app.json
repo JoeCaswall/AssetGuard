@@ -15,6 +15,9 @@
     },
     "android": {
       "package": "com.meridian.assetguard"
-    }
+    },
+    "plugins": [
+      "expo-sqlite"
+    ]
   }
 }
