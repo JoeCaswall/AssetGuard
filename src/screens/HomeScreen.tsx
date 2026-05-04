@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Screen } from '../components/Screen';
 import { StatusBadge } from '../components/StatusBadge';
@@ -7,7 +7,11 @@ import { useAssetGuard, useSnapshotData } from '../context/AssetGuardProvider';
 
 import { formatShortDate } from '../utils/date';
 
-export function HomeScreen() {
+interface HomeScreenProps {
+  onSelectTask?: (taskId: string) => void;
+}
+
+export function HomeScreen({ onSelectTask }: HomeScreenProps) {
   const { theme } = useAssetGuard();
   const { tasks } = useSnapshotData();
   const highPriorityCount = tasks.filter((task) => task.priority === 'high').length;
@@ -37,8 +41,9 @@ export function HomeScreen() {
 
       <Text style={[styles.sectionTitle, { color: theme.text }]}>Scheduled tasks</Text>
       {tasks.map((task) => (
-        <View
+        <Pressable
           key={task.id}
+          onPress={() => onSelectTask?.(task.assetId)}
           style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}
         >
           <View style={styles.rowBetween}>
@@ -56,7 +61,7 @@ export function HomeScreen() {
             <Text style={[styles.helper, { color: theme.textMuted }]}>Due {formatShortDate(task.dueDate)}</Text>
             <StatusBadge label={task.status} tone="primary" />
           </View>
-        </View>
+        </Pressable>
       ))}
     </Screen>
   );
