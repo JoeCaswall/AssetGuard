@@ -1,6 +1,7 @@
 import * as SQLite from 'expo-sqlite';
 
 import { seedTasks } from '../data/seed';
+import { hasLocalDataExpired } from './retention';
 import { AppStateSnapshot, InspectionDraft, TaskStatus } from '../types/domain';
 import { DraftRow, TaskRow, draftToSqliteParams, rowToInspectionDraft, rowToTask } from './sqliteMappers';
 import {
@@ -17,6 +18,7 @@ It seeds data from src/data/seed.ts for PoC purposes
 */
 
 const DATABASE_NAME = 'assetguard.db';
+const LOCAL_DATA_LAST_UPDATED_KEY = 'local_data_last_updated_at';
 
 type StoredValue = string | number;
 
@@ -46,6 +48,10 @@ interface DatabaseTransaction {
   runAsync(source: string, ...params: unknown[]): Promise<unknown>;
 }
 
+interface MetadataRow {
+  value: string;
+}
+
 let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
 let initPromise: Promise<void> | null = null;
 
@@ -72,6 +78,10 @@ async function ensureDatabaseReady() {
 async function initialiseDatabase(db: SQLite.SQLiteDatabase) {
   await db.execAsync(`
     PRAGMA journal_mode = WAL;
+    CREATE TABLE IF NOT EXISTS app_metadata (
+      key TEXT PRIMARY KEY NOT NULL,
+      value TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS tasks (
       id TEXT PRIMARY KEY NOT NULL,
       asset_id TEXT NOT NULL,
@@ -94,17 +104,62 @@ async function initialiseDatabase(db: SQLite.SQLiteDatabase) {
     );
   `);
 
+  await purgeExpiredLocalDataIfNeeded(db);
+
   const countRow = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) AS count FROM tasks');
 
   if ((countRow?.count ?? 0) > 0) {
     await migratePlaintextRowsToEncrypted(db);
+    await ensureLocalDataRetentionMarker(db);
 
     return;
   }
 
   await db.withExclusiveTransactionAsync(async (txn) => {
     await seedEncryptedTasks(txn);
+    await updateLocalDataRetentionMarker(txn);
   });
+}
+
+async function getLocalDataLastUpdatedAt(db: SQLite.SQLiteDatabase) {
+  const row = await db.getFirstAsync<MetadataRow>(
+    'SELECT value FROM app_metadata WHERE key = $key',
+    { $key: LOCAL_DATA_LAST_UPDATED_KEY },
+  );
+
+  return row?.value ?? null;
+}
+
+async function updateLocalDataRetentionMarker(target: DatabaseTransaction | SQLite.SQLiteDatabase, timestamp = new Date().toISOString()) {
+  await target.runAsync(
+    `INSERT INTO app_metadata (key, value)
+     VALUES ($key, $value)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    {
+      $key: LOCAL_DATA_LAST_UPDATED_KEY,
+      $value: timestamp,
+    },
+  );
+}
+
+async function ensureLocalDataRetentionMarker(db: SQLite.SQLiteDatabase) {
+  const lastUpdatedAt = await getLocalDataLastUpdatedAt(db);
+
+  if (lastUpdatedAt) {
+    return;
+  }
+
+  await updateLocalDataRetentionMarker(db);
+}
+
+async function purgeExpiredLocalDataIfNeeded(db: SQLite.SQLiteDatabase) {
+  const lastUpdatedAt = await getLocalDataLastUpdatedAt(db);
+
+  if (!lastUpdatedAt || !hasLocalDataExpired(lastUpdatedAt)) {
+    return;
+  }
+
+  await resetDatabaseWithEncryptedSeedData(db);
 }
 
 async function seedEncryptedTasks(txn: DatabaseTransaction) {
@@ -130,6 +185,7 @@ async function resetDatabaseWithEncryptedSeedData(db: SQLite.SQLiteDatabase) {
   await db.withExclusiveTransactionAsync(async (txn) => {
     await txn.execAsync('DELETE FROM inspection_drafts; DELETE FROM tasks;');
     await seedEncryptedTasks(txn);
+    await updateLocalDataRetentionMarker(txn);
   });
 }
 
@@ -364,6 +420,8 @@ export async function saveInspectionDraftToDatabase(taskId: string, draft: Inspe
        leak_check = excluded.leak_check`,
     encryptedDraftParams,
   );
+
+  await updateLocalDataRetentionMarker(db);
 }
 
 export async function updateTaskStatusInDatabase(taskId: string, status: TaskStatus): Promise<void> {
@@ -374,6 +432,8 @@ export async function updateTaskStatusInDatabase(taskId: string, status: TaskSta
     $status: encryptedStatus,
     $taskId: taskId,
   });
+
+  await updateLocalDataRetentionMarker(db);
 }
 
 export async function loadDatabaseDebugView() {
