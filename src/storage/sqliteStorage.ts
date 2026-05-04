@@ -301,6 +301,7 @@ async function encryptDraftParams(taskId: string, draft: InspectionDraft) {
     $safeIsolation: await encryptStorageValue(plaintextParams.$safeIsolation),
     $structuralIntegrity: await encryptStorageValue(plaintextParams.$structuralIntegrity),
     $leakCheck: await encryptStorageValue(plaintextParams.$leakCheck),
+    $isSynced: plaintextParams.$isSynced,
   };
 }
 
