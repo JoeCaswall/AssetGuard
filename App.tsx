@@ -1,8 +1,10 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { ActivityIndicator } from 'react-native';
 
 import { AssetGuardProvider } from './src/context/AssetGuardProvider';
-import { useSnapshotData } from './src/context/AssetGuardProvider';
+import { useAssetGuard, useSnapshotData } from './src/context/AssetGuardProvider';
+import { Screen } from './src/components/Screen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { InspectionFormScreen } from './src/screens/InspectionFormScreen';
 import { TaskDetailScreen } from './src/screens/TaskDetailScreen';
@@ -13,8 +15,17 @@ type AppRoute =
   | { name: 'inspection-form'; taskId: string };
 
 function AppShell() {
+  const { ready, theme } = useAssetGuard();
   const { tasks } = useSnapshotData();
   const [route, setRoute] = React.useState<AppRoute>({ name: 'home' });
+
+  if (!ready) {
+    return (
+      <Screen contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={theme.primary} />
+      </Screen>
+    );
+  }
 
   if (route.name === 'home') {
     return <HomeScreen onSelectTask={(taskId) => setRoute({ name: 'task-detail', taskId })} />;

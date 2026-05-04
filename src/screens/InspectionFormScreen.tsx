@@ -37,11 +37,11 @@ export function InspectionFormScreen({ task, onBack }: InspectionFormScreenProps
   const draftSummary = buildInspectionDraftSummary(currentDraft);
 
   React.useEffect(() => {
-    saveInspectionDraft(task.id, currentDraft);
+    void saveInspectionDraft(task.id, currentDraft);
   }, [currentDraft, saveInspectionDraft, task.id]);
 
-  function handleSubmit(action: 'save-draft' | 'complete') {
-    submitInspectionDraft(task.id, action, currentDraft);
+  async function handleSubmit(action: 'save-draft' | 'complete') {
+    await submitInspectionDraft(task.id, action, currentDraft);
     onBack();
   }
 
@@ -138,12 +138,12 @@ export function InspectionFormScreen({ task, onBack }: InspectionFormScreenProps
 
       <View style={styles.actionRow}>
         <Pressable
-          onPress={() => handleSubmit('save-draft')}
+          onPress={() => void handleSubmit('save-draft')}
           style={[styles.secondaryButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
         >
           <Text style={[styles.secondaryButtonText, { color: theme.text }]}>Save draft</Text>
         </Pressable>
-        <Pressable onPress={() => handleSubmit('complete')} style={[styles.primaryButton, { backgroundColor: theme.primary }]}> 
+        <Pressable onPress={() => void handleSubmit('complete')} style={[styles.primaryButton, { backgroundColor: theme.primary }]}> 
           <Text style={styles.primaryButtonText}>Complete inspection</Text>
         </Pressable>
       </View>
